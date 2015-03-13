@@ -1,0 +1,40 @@
+package src.main.java.cn.edu;
+
+import java.io.IOException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.GenericOptionsParser;
+
+import src.main.java.cn.edu.FileTotal.FileCountMapper;
+import src.main.java.cn.edu.FileTotal.FileCountReducer;
+
+public class TrainWork {
+	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
+		Configuration conf = new Configuration();
+		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		if (otherArgs.length != 2) {
+			System.err.println("Usage: SplitWord <in> <out>");
+			System.exit(2);
+		}
+		conf.set("output", args[1]);
+		// 统计分类文档数和总文档数量
+		Job job = new Job(conf, "FileCount"); // 设置一个用户定义的job名称
+		job.setJarByClass(FileTotal.class);
+		job.setMapperClass(FileCountMapper.class); // 为job设置Mapper类
+		job.setReducerClass(FileCountReducer.class); // 为job设置Reducer类
+		job.setOutputKeyClass(Text.class); // 为job的输出数据设置Key类
+		job.setOutputValueClass(Text.class); // 为job输出设置value类
+		job.setInputFormatClass(TextInputFormat.class);
+		FileInputFormat.addInputPath(job, new Path(otherArgs[0])); // 为job设置输入路径
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));// 为job设置输出路径
+		// job.setNumReduceTasks(10);
+		job.waitForCompletion(true);
+
+	}
+}

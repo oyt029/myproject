@@ -1,0 +1,487 @@
+/*
+ * ÀàÃû£ºHBaseTestCase
+ * ¹¦ÄÜ£º¶ÔHbaseÊý¾Ý¿âµÄÊ®¶þ²½²Ù×÷£¬°üÀ¨´´½¨Êý¾Ý¿âµÄÔö¡¢É¾¡¢²é¡¢¸ÄµÈ£¬¶ÁÈ¡Êý¾Ý¿â£¬½«¼òÀú´æÈëhdfs
+ * hbaseÊý¾Ý¿â±í£ºÔ±¹¤ÐÕÃû Ô±¹¤ÄêÁä Ô±¹¤ID 
+ * ²âÊÔ»·¾³£ºlinux eclipse hadoop»·¾³
+ * ×¢Òâ£º´´½¨Äã±¾µØµÄ¼òÀúÄ¿Â¼ºÍÎÄ¼þ£¬´Ë´¦Ä¿Â¼ÔÚ·½·¨£ºuploadToHdfs()ÀïÃæ¡£
+ * Ê±¼ä£º2014-2-24
+ * ×÷Õß£ºOu Yangtao
+ *
+ * 
+ */
+package hbase;
+
+import java.io.*;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import org.apache.commons.beanutils.DynaBean;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.HTableInterface;
+import org.apache.hadoop.hbase.client.HTablePool;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+
+import org.apache.hadoop.hbase.filter.BinaryComparator;
+import org.apache.hadoop.hbase.filter.CompareFilter.CompareOp;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.FilterList.Operator;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
+public class hbase {
+	private static Configuration conf = null;
+	/**
+	 * ³õÊ¼»¯ÅäÖÃ
+	 */
+	static {
+		/* ´´½¨ÅäÖÃ¶ÔÏó */
+		conf = HBaseConfiguration.create();
+		/*
+		 * Óëhbase-0.96/conf/hbase-site.xmlÖÐhbase.zookeeper.quorumÅäÖÃµÄÖµÏàÍ¬£¬Ö÷½ÚµãÊÇmaster
+		 * £¬×Ó½ÚµãÊÇslave01
+		 */
+		conf.set("hbase.zookeeper.quorum", "master2,slave03,slave04");
+		/*
+		 * ÉèÖÃzookeeperµÄ¶Ë¿ÚºÅ£¬Óëhbase-0.90.2/conf/hbase-site.xmlÖÐhbase.zookeeper.
+		 * property.clientPortÅäÖÃµÄÖµÏàÍ¬
+		 */
+		conf.set("hbase.zookeeper.property.clientPort", "2181");
+		/* ÉèÖÃhbaseÊý¾Ý¿âµÄ¶Ë¿ÚºÅ */
+		//conf.set("hbase.master", "master:600000");
+	}
+
+	// ´´½¨Êý¾Ý¿â±í
+	public static void createTable(String tableName, String[] columnFamilys)
+			throws Exception {
+		// ÐÂ½¨Ò»¸öÊý¾Ý¿â¹ÜÀíÔ±
+		HBaseAdmin hAdmin = new HBaseAdmin(conf);
+		if (hAdmin.tableExists(tableName)) {// Èç¹û´æÔÚÒª´´½¨µÄ±í£¬ÄÇÃ´ÏÈÉ¾³ý£¬ÔÙ´´½¨
+			hAdmin.disableTable(tableName);
+			hAdmin.deleteTable(tableName);
+			System.out.println(tableName + " is exist,detele....");
+		}
+		if (hAdmin.tableExists(tableName)) {
+			System.out.println("±íÒÑ¾­´æÔÚ");
+			System.exit(0);
+		} else {
+			// ÐÂ½¨Ò»¸ö scores ±íµÄÃèÊö
+			HTableDescriptor tableDesc = new HTableDescriptor(tableName);
+			// ÔÚÃèÊöÀïÌí¼ÓÁÐ×å
+			for (String columnFamily : columnFamilys) {
+				tableDesc.addFamily(new HColumnDescriptor(columnFamily));
+			}
+			// ¸ù¾ÝÅäÖÃºÃµÄÃèÊö½¨±í
+			hAdmin.createTable(tableDesc);
+			System.out.println("´´½¨±í³É¹¦");
+		}
+	}
+
+	// É¾³ýÊý¾Ý¿â±í
+	public static void deleteTable(String tableName) throws Exception {
+		// ÐÂ½¨Ò»¸öÊý¾Ý¿â¹ÜÀíÔ±
+		HBaseAdmin hAdmin = new HBaseAdmin(conf);
+		if (hAdmin.tableExists(tableName)) {
+			// ¹Ø±ÕÒ»¸ö±í
+			hAdmin.disableTable(tableName);
+			// É¾³ýÒ»¸ö±í
+			hAdmin.deleteTable(tableName);
+			System.out.println("É¾³ý±í³É¹¦");
+		} else {
+			System.out.println("É¾³ýµÄ±í²»´æÔÚ");
+			System.exit(0);
+		}
+	}
+
+	// Ìí¼ÓÒ»ÌõÊý¾Ý
+	public static void addRow(String tableName, String row,
+			String columnFamily, String column, String value) throws Exception {
+		HTable table = new HTable(conf, tableName);
+		Put put = new Put(Bytes.toBytes(row));
+		// ²ÎÊý³ö·Ö±ð£ºÁÐ×å¡¢ÁÐ¡¢Öµ
+		put.add(Bytes.toBytes(columnFamily), Bytes.toBytes(column),
+				Bytes.toBytes(value));
+		table.put(put);
+	}
+
+	/*
+	 * ²éÑ¯±íÖÐµÄÄ³Ò»ÁÐ
+	 * 
+	 * @tableName ±íÃû
+	 * 
+	 * @rowKey rowKey
+	 */
+	public static void getResultByColumn(String tableName, String rowKey,
+			String familyName, String columnName) throws IOException {
+		HTable table = new HTable(conf, Bytes.toBytes(tableName));
+		Get get = new Get(Bytes.toBytes(rowKey));
+		get.addColumn(Bytes.toBytes(familyName), Bytes.toBytes(columnName)); // »ñÈ¡Ö¸¶¨ÁÐ×åºÍÁÐÐÞÊÎ·û¶ÔÓ¦µÄÁÐ
+		Result result = table.get(get);
+		for (KeyValue kv : result.list()) {
+			System.out.println("family:" + Bytes.toString(kv.getFamily()));
+			System.out
+					.println("qualifier:" + Bytes.toString(kv.getQualifier()));
+			System.out.println("value:" + Bytes.toString(kv.getValue()));
+			System.out.println("Timestamp:" + kv.getTimestamp());
+			System.out.println("-------------------------------------------");
+		}
+	}
+
+	/*
+	 * ¸üÐÂ±íÖÐµÄÄ³Ò»ÁÐ
+	 * 
+	 * @tableName ±íÃû
+	 * 
+	 * @rowKey rowKey
+	 * 
+	 * @familyName ÁÐ×åÃû
+	 * 
+	 * @columnName ÁÐÃû
+	 * 
+	 * @value ¸üÐÂºóµÄÖµ
+	 */
+	public static void updateTable(String tableName, String rowKey,
+			String familyName, String columnName, String value)
+			throws IOException {
+		HTable table = new HTable(conf, Bytes.toBytes(tableName));
+		Put put = new Put(Bytes.toBytes(rowKey));
+		put.add(Bytes.toBytes(familyName), Bytes.toBytes(columnName),
+				Bytes.toBytes(value));
+		table.put(put);
+		System.out.println("update table Success!");
+	}
+
+	/*
+	 * ²éÑ¯Ä³ÁÐÊý¾ÝµÄ¶à¸ö°æ±¾
+	 * 
+	 * @tableName ±íÃû
+	 * 
+	 * @rowKey rowKey
+	 * 
+	 * @familyName ÁÐ×åÃû
+	 * 
+	 * @columnName ÁÐÃû
+	 */
+	public static void getResultByVersion(String tableName, String rowKey,
+			String familyName, String columnName) throws IOException {
+		HTable table = new HTable(conf, Bytes.toBytes(tableName));
+		Get get = new Get(Bytes.toBytes(rowKey));
+		get.addColumn(Bytes.toBytes(familyName), Bytes.toBytes(columnName));
+		get.setMaxVersions(5);
+		Result result = table.get(get);
+		for (KeyValue kv : result.list()) {
+			System.out.println("family:" + Bytes.toString(kv.getFamily()));
+			System.out
+					.println("qualifier:" + Bytes.toString(kv.getQualifier()));
+			System.out.println("value:" + Bytes.toString(kv.getValue()));
+			System.out.println("Timestamp:" + kv.getTimestamp());
+			System.out.println("-------------------------------------------");
+		}
+		/*
+		 * List<?> results = table.get(get).list(); Iterator<?> it =
+		 * results.iterator(); while (it.hasNext()) {
+		 * System.out.println(it.next().toString()); }
+		 */
+	}
+
+	/*
+	 * É¾³ýÖ¸¶¨µÄÁÐ
+	 * 
+	 * @tableName ±íÃû
+	 * 
+	 * @rowKey rowKey
+	 * 
+	 * @familyName ÁÐ×åÃû
+	 * 
+	 * @columnName ÁÐÃû
+	 */
+	public static void deleteColumn(String tableName, String rowKey,
+			String falilyName, String columnName) throws IOException {
+		HTable table = new HTable(conf, Bytes.toBytes(tableName));
+		Delete deleteColumn = new Delete(Bytes.toBytes(rowKey));
+		deleteColumn.deleteColumns(Bytes.toBytes(falilyName),
+				Bytes.toBytes(columnName));
+		table.delete(deleteColumn);
+		System.out.println(falilyName + ":" + columnName + "is deleted!");
+	}
+
+	/*
+	 * É¾³ýÖ¸¶¨µÄÁÐ
+	 * 
+	 * @tableName ±íÃû
+	 * 
+	 * @rowKey rowKey
+	 */
+	public static void deleteAllColumn(String tableName, String rowKey)
+			throws IOException {
+		HTable table = new HTable(conf, Bytes.toBytes(tableName));
+		Delete deleteAll = new Delete(Bytes.toBytes(rowKey));
+		table.delete(deleteAll);
+		System.out.println("all columns are deleted!");
+	}
+
+	// É¾³ýÒ»ÌõÊý¾Ý
+	public static void delRow(String tableName, String row) throws Exception {
+		HTable table = new HTable(conf, tableName);
+		Delete del = new Delete(Bytes.toBytes(row));
+		table.delete(del);
+	}
+
+	// É¾³ý¶àÌõÊý¾Ý d
+	public static void delMultiRows(String tableName, String[] rows)
+			throws Exception {
+		HTable table = new HTable(conf, tableName);
+		List<Delete> list = new ArrayList<Delete>();
+		for (String row : rows) {
+			Delete del = new Delete(Bytes.toBytes(row));
+			list.add(del);
+		}
+		table.delete(list);
+	}
+
+	// get row
+	public static void getRow(String tableName, String row) throws Exception {
+		HTable table = new HTable(conf, tableName);
+		Get get = new Get(Bytes.toBytes(row));
+		Result result = table.get(get);
+		// Êä³ö½á¹û
+		for (KeyValue rowKV : result.raw()) {
+			System.out.print("Row Name: " + new String(rowKV.getRow()) + " ");
+			System.out.print("Timestamp: " + rowKV.getTimestamp() + " ");
+			System.out.print("column Family: " + new String(rowKV.getFamily())
+					+ " ");
+			System.out.print("Row Name:  " + new String(rowKV.getQualifier())
+					+ " ");
+			System.out.println("Value: " + new String(rowKV.getValue()) + " ");
+		}
+	}
+
+	// get all records
+	public static void getAllRows(String tableName) throws Exception {
+		HTable table = new HTable(conf, tableName);
+		Scan scan = new Scan();
+		ResultScanner results = table.getScanner(scan);
+		// Êä³ö½á¹û
+		for (Result result : results) {
+			for (KeyValue rowKV : result.raw()) {
+				System.out.print("Row Name: " + new String(rowKV.getRow())
+						+ " ");
+				System.out.print("Timestamp: " + rowKV.getTimestamp() + " ");
+				System.out.print("column Family: "
+						+ new String(rowKV.getFamily()) + " ");
+				System.out.print("Row Name:  "
+						+ new String(rowKV.getQualifier()) + " ");
+				System.out.println("Value: " + new String(rowKV.getValue())
+						+ " ");
+			}
+		}
+	}
+
+	/** ÉÏ´«ÎÄ¼þµ½HDFSÉÏÈ¥ */
+	private static void uploadToHdfs() throws FileNotFoundException,
+			IOException {
+		String localSrc = "/input/Yangzhenghong.txt";
+		String dst = "hdfs://192.168.0.110:9000/input/Yangzhenghong.txt";
+		InputStream in = new BufferedInputStream(new FileInputStream(localSrc));
+		Configuration conf = new Configuration();
+		FileSystem fs = FileSystem.get(URI.create(dst), conf);
+		OutputStream out = fs.create(new Path(dst), new Progressable() {
+			public void progress() {
+				System.out.print("uploadToHdfs...");
+			}
+		});
+		IOUtils.copyBytes(in, out, 4096, true);
+	}
+
+	@SuppressWarnings("deprecation")
+	public static void QueryByCondition2(String tableName) {
+		try {
+			HTablePool poo = new HTablePool(conf, 1000);
+			HTableInterface table = poo.getTable(tableName);
+			Filter filter = new SingleColumnValueFilter(Bytes.toBytes("ID"),
+					null, CompareOp.EQUAL, Bytes.toBytes("2")); // µ±ÁÐageµÄÖµ´óÓÚ18Ê±½øÐÐ²éÑ¯
+			Scan s = new Scan();
+			s.setFilter(filter);
+			ResultScanner rs = table.getScanner(s);
+			for (Result r : rs) {
+				System.out.println("»ñµÃµ½rowkey:" + new String(r.getRow()));
+				for (KeyValue keyValue : r.raw()) {
+					System.out.println("ÁÐ£º" + new String(keyValue.getFamily())
+							+ "====Öµ:" + new String(keyValue.getValue()));
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void selectByFilter(String tablename, List<String> arr)
+			throws IOException {
+		HTable table = new HTable(conf, tablename);
+		FilterList filterList = new FilterList();
+		Scan s1 = new Scan();
+		for (String v : arr) { // ¸÷¸öÌõ¼þÖ®¼äÊÇ¡°Óë¡±µÄ¹ØÏµ
+			String[] s = v.split(",");
+			filterList.addFilter(new SingleColumnValueFilter(Bytes
+					.toBytes(s[0]), Bytes.toBytes(s[1]), CompareOp.GREATER,
+					Bytes.toBytes(s[2])));
+			// Ìí¼ÓÏÂÃæÕâÒ»ÐÐºó£¬ÔòÖ»·µ»ØÖ¸¶¨µÄcell£¬Í¬Ò»ÐÐÖÐµÄÆäËûcell²»·µ»Ø
+			// s1.addColumn(Bytes.toBytes(s[0]), Bytes.toBytes(s[1]));
+		}
+		s1.setFilter(filterList);
+		ResultScanner ResultScannerFilterList = table.getScanner(s1);
+		for (Result rr = ResultScannerFilterList.next(); rr != null; rr = ResultScannerFilterList
+				.next()) {
+			for (KeyValue kv : rr.list()) {
+				System.out.println("row : " + new String(kv.getRow()));
+				System.out.println("column : " + new String(kv.getQualifier()));
+				System.out.println("value : " + new String(kv.getValue()));
+			}
+		}
+	}
+
+	public static ResultScanner scan(String tableName) {
+		HTable oTable;
+		ResultScanner result = null;
+		try {
+			oTable = new HTable(conf, tableName);
+			Scan oScan = new Scan();
+			result = oTable.getScanner(oScan);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		for (Result r : result) {
+			for (KeyValue kv : r.raw()) {
+				System.out.print(new String(kv.getRow()) + "");
+				System.out.print(new String(kv.getFamily()) + ":");
+				System.out.print(new String(kv.getQualifier()) + "");
+				System.out.print(kv.getTimestamp() + "");
+				System.out.println(new String(kv.getValue()));
+			}
+		}
+		return result;
+	}
+
+	public static void main(String[] agrs) {
+		try {
+			// µÚÒ»²½£º´´½¨Êý¾Ý¿â±í£º¡°employee_table¡±£¬²¢´´½¨Ò»¸öÁÐ×å employee_info
+			String tablename = "employee_table";
+			String[] columnFamilys = { "employee_table" };
+			hbase.createTable(tablename, columnFamilys);
+			// µÚ¶þ²½£ºÏòÊý¾Ý±íµÄÌí¼ÓÊý¾Ý
+			// Ìí¼ÓµÚÒ»ÐÐÊý¾Ý£¬Ô±¹¤ YangZhenghong ²åÈë10ÍòÌõ£¡£¡
+			for (int i = 0; i <= 10; i++) {
+				System.out.println(i);
+				hbase.addRow(tablename, i + "", "employee_table", "age", "45");
+				hbase.addRow(tablename, i + "", "employee_table", "ID", i + "");
+			}
+			// HBaseTestCase.addRow(tablename, "YangZhenghong"
+			// ,"employee_info","ID","01");
+			// // Ìí¼ÓµÚ¶þÐÐÊý¾Ý£¬Ô±¹¤ OuYangtao
+			// HBaseTestCase.addRow(tablename, "OuYangtao"
+			// ,"employee_info","age","28");
+			// HBaseTestCase.addRow(tablename, "OuYangtao"
+			// ,"employee_info","ID","02");
+			// HBaseTestCase.addRow(tablename, "OuYangtao"
+			// ,"employee_info","sex","man");
+			// HBaseTestCase.addRow(tablename, "OuYangtao"
+			// ,"employee_info","salary","12345");
+			// µÚÈý²½£º»ñÈ¡Ò»ÌõÊý¾Ý
+			System.out.println("»ñÈ¡Ò»ÌõÊý¾Ý");
+			//hbase.getRow(tablename, "YangZhenghong");
+			// µÚËÄ²½£º»ñÈ¡ËùÓÐÊý¾Ý
+			System.out.println("»ñÈ¡ËùÓÐÊý¾Ý");
+			
+			hbase.getAllRows("EHDP_Hosp4");
+			/*
+			 * sqlÓï¾ä --sql½âÎöÆ÷--> sqlÓï·¨½Úµã(¶ÔÏó) -> scan -> hbase -> ResultScanner
+			 * -> List<DynaBean>
+			 * 
+			 * select ID from tablename where ID = 2
+			 * 
+			 * ÎÒÃÇÍ¨¹ýsql½âÎöÆ÷¿ÉÒÔµÃµ½sqlÓï¾äµÄ¸÷¸ö²¿·Ö, ÔÙµ÷ÓÃhbase apiÖÐÏàÓ¦µÄÓï¾äÀ´´ïµ½ÏàÍ¬µÄÐ§¹û
+			 */
+			System.out.println("µ±ÁÐID=2Ê±½øÐÐ²éÑ¯£º");
+			Scan scan = new Scan();
+			// whereÌõ¼þ
+			// ID = 2
+			SingleColumnValueFilter a = new SingleColumnValueFilter(
+					Bytes.toBytes("ID"), Bytes.toBytes("2"), CompareOp.EQUAL,
+					new BinaryComparator(Bytes.toBytes(1)));
+			FilterList filterList = new FilterList(Operator.MUST_PASS_ALL, a);
+			scan.setFilter(filterList);
+			// List<DynaBean> rows = new
+			// HbaseQueryImpl().select("select * from employee_table");
+			// System.out.println(rows.size());
+			/*
+			 * List<String> arr=new ArrayList<String>();
+			 * //arr.add("employee_table,1,"); arr.add("employee_info,id,2");
+			 * //arr.add("employee_info,,100"); long begin =
+			 * System.currentTimeMillis();
+			 * HBaseTestCase.selectByFilter(tablename,arr); long end =
+			 * System.currentTimeMillis();
+			 * System.out.println("total need time = "+ (end -
+			 * begin)*1.0/1000+"s");
+			 */
+			/*
+			 * // µÚÎå²½£ºÉ¾³ýÒ»ÌõÊý¾Ý System.out.println("É¾³ýÒ»ÌõÊý¾Ý");
+			 * HBaseTestCase.delRow(tablename, "OuYangtao");
+			 * HBaseTestCase.getAllRows(tablename); // µÚÁù²½£ºÉ¾³ý¶àÌõÊý¾Ý
+			 * System.out.println("É¾³ý¶àÌõÊý¾Ý"); String[] rows = { "YangZhenghong",
+			 * "OuYangtao" }; HBaseTestCase.delMultiRows(tablename, rows);
+			 * HBaseTestCase.getAllRows(tablename); // µÚÆß²½£ºÉ¾³ýÊý¾Ý¿â
+			 * System.out.println("É¾³ýÊý¾Ý¿â");
+			 * HBaseTestCase.deleteTable(tablename); // µÚ°Ë²½£º¸üÐÂÁÐ
+			 * updateTable(tablename, "YangZhenghong", "employee_info", "age",
+			 * "46"); // µÚ¾Å²½£º ²éÑ¯Ä³Ò»ÁÐµÄÖµ getResultByColumn("tablename",
+			 * "YangZhenghong", "employee_info", "age"); // µÚÊ®²½£º²éÑ¯Ä³ÁÐµÄ¶à°æ±¾
+			 * getResultByVersion("tablename", "YangZhenghong", "employee_info",
+			 * "age"); // µÚÊ®Ò»²½£ºÉ¾³ýÒ»ÁÐ deleteColumn("tablename", "YangZhenghong",
+			 * "employee_info", "age"); // µÚÊ®¶þ²½£ºÉ¾³ýËùÓÐÁÐ
+			 * deleteAllColumn("tablename", "YangZhenghong");
+			 */
+			// µÚÊ®¶þ²½£º´æÎªÐÎ³É¼òÀútxt·ÅÔÚhdfs
+//			List al = new ArrayList();
+//			HTable table = new HTable(conf, tablename);
+//			Get get = new Get(Bytes.toBytes("YangZhenghong"));
+//			Result result = table.get(get);
+//			FileWriter fileWriter = new FileWriter("/input/Yangzhenghong.txt");
+//			for (KeyValue rowKV : result.raw()) {
+//				al.add(new String(rowKV.getRow()));
+//				al.add(new String(rowKV.getQualifier()));
+//				al.add(new String(rowKV.getValue()));
+//			}
+//			for (Iterator i = al.iterator(); i.hasNext();) {
+//				String str = (String) i.next();
+//				System.out.println(str);
+//				fileWriter.write(str);
+//			}
+//			fileWriter.flush();
+//			fileWriter.close();
+//			uploadToHdfs();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+}

@@ -1,0 +1,43 @@
+package mahout02;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.util.ToolRunner;
+
+
+import fz.hadoop2.util.Hadoop2Util;
+/**
+ * 测试mahout org.apache.mahout.cf.taste.hadoop.item.RecommenderJob
+ * environment：
+ * mahout0.9
+ * hadoop2.2
+ * @author fansy
+ *
+ */
+public class mahout02{
+ //RecommenderJob rec = null;
+ Configuration conf =null;
+
+ public void setUp(){
+ // rec= new RecommenderJob();
+  conf= Hadoop2Util.getConf();
+  System.out.println("Begin to test...");
+ }
+ 
+ 
+ public void testMain() throws Exception{
+  String[] args ={
+  "-i","hdfs://node31:9000/input/user.csv", 
+        "-o","hdfs://node31:9000/output/rec001", 
+        "-n","3","-b","false","-s","SIMILARITY_EUCLIDEAN_DISTANCE", 
+        "--maxPrefsPerUser","7","--minPrefsPerUser","2", 
+        "--maxPrefsInItemSimilarity","7", 
+        "--outputPathForSimilarityMatrix","hdfs://node31:9000/output/matrix/rec001",
+        "--tempDir","hdfs://node31:9000/output/temp/rec001"};
+  ToolRunner.run(conf, new RecommenderJob(), args);
+ }
+ 
+ 
+ public void cleanUp(){
+ 
+ }
+}
