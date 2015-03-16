@@ -34,7 +34,6 @@ public class mahout02{
 //  ToolRunner.run(conf, new RecommenderJob(), args1);
 // }
  
- 
  String[] args1 = { "-i", "hdfs://master2:8020/user/hdfs/rating/ratings.csv", "-o",
          "hdfs://master2:8020/user/hdfs/dataset"," --similarityClassname org.apache.mahout.math.hadoop.similarity.cooccurrence.measures.EuclideanDistanceSimilarity","--tempDir",
          "hdfs://master2:8020/user/hdfs/" };

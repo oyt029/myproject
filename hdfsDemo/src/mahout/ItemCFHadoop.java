@@ -33,7 +33,7 @@ public class ItemCFHadoop {
         args = sb.toString().split(" ");
 
         RecommenderJob job = new RecommenderJob();
-        job.setConf(conf);
+       //job.setConf(conf);
         job.run(args);
 
         //hdfs.(outFile);
