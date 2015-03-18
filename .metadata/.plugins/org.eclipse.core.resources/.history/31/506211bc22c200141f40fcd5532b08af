@@ -1,0 +1,44 @@
+package com.hdfs;
+
+import java.io.IOException;
+
+
+
+public class jiami {
+	
+	public static void main(String[] args) throws Exception {
+//		try {
+//		    String cmds="openssl enc -aes-128-cbc -in /hadoop-2.6.0.2.2.0.0-2041-src.tar.gz -out /hadoop-2.6.0.2.2.0.0-2041-src.tar.g.ef -k 123abc";   
+//		    Process child = Runtime.getRuntime().exec(cmds);
+//		 } catch (IOException e) {
+//		 e.printStackTrace();
+		
+//		 }
+		String pathin = "/hadoop-2.6.0.2.2.0.0-2041-src.tar.gz";
+		String pathout = "/hadoop-2.6.0.2.2.0.0-2041-src.tar.g.ef";
+		jiami(pathin,pathout);
+		//Runtime.getRuntime().exec(new  String[]{"openssl","enc", "-aes-128-cbc", "-in","/hadoop-2.6.0.2.2.0.0-2041-src.tar.gz","-out","/hadoop-2.6.0.2.2.0.0-2041-src.tar.g.ef","-k","123abc"});
+		System.out.println("ok");
+		// deleteFromHdfs();
+		// getDirectoryFromHdfs();
+		// appendToHdfs();
+		//readFromHdfs();
+		// stringToHdfs("test", "hdfs://192.168.1.107:8020/testup_test");
+	}
+	
+	private static void jiami(String pathin, String pathout) {
+		try {
+			Runtime.getRuntime().exec(new  String[]{"openssl","enc", "-aes-128-cbc", "-in",pathin,"-out",pathout,"-k","123abc"});
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		System.out.println("-------------------jiami end------------------------");
+		// TODO Auto-generated method stub
+		
+	}
+
+	
+	
+}

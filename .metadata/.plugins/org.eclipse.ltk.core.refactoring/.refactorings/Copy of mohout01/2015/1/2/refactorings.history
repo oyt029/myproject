@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring accessors="true" comment="Delete 3 elements from project &apos;Copy of mohout01&apos;&#x0A;- Original project: &apos;Copy of mohout01&apos;&#x0A;- Original elements:&#x0A;     fz.hadoop2.util.Hadoop2Util.java&#x0A;     Copy of mohout01/src/mahout02&#x0A;     mahout02.mahout02.java" description="Delete elements" element1="/src&lt;fz.hadoop2.util{Hadoop2Util.java" element2="/src&lt;mahout02" elements="2" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1420701655973" subPackages="false" version="1.0"/>
+</session>

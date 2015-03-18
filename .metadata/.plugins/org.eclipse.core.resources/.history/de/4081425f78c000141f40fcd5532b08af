@@ -1,0 +1,177 @@
+package hive;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import org.apache.log4j.Logger;
+
+/**
+ *
+ * 
+ */
+public class hiveDAO {
+
+	private static String driverName = "org.apache.hadoop.hive.jdbc.HiveDriver";
+	private static String url = "jdbc:hive://slave01:10004/";
+	private static String user = "hive";
+	private static String password = "mysql";
+	private static String sql = "";
+	private static ResultSet res;
+	private static final Logger log = Logger.getLogger(hiveDAO.class);
+
+	public static void main(String[] args) {
+		Connection conn = null;
+		Statement stmt = null;
+		try {
+			conn = getConn();
+			stmt = conn.createStatement();
+
+			
+			String tableName ;
+			tableName = "squidtable";
+
+			//createTable(stmt, tableName);
+
+			showTables(stmt, tableName);
+
+			describeTables(stmt, tableName);
+
+			
+			//loadData(stmt, tableName);
+
+			//selectData(stmt, tableName);
+			//selectMACData(stmt, tableName,"50:e5:49:13:fb:9a");
+			String MAC = "1970-01-01 00:01:45";
+			selectTimeData(stmt, tableName,MAC);
+
+			
+			countData(stmt, tableName);
+
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			log.error(driverName + " not found!", e);
+			System.exit(1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			log.error("Connection error!", e);
+			System.exit(1);
+		} finally {
+			try {
+				if (conn != null) {
+					conn.close();
+					conn = null;
+				}
+				if (stmt != null) {
+					stmt.close();
+					stmt = null;
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private static void countData(Statement stmt, String tableName)
+			throws SQLException {
+		sql = "select count(1) from " + tableName;
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+		System.out.println("regular hive query:");
+		while (res.next()) {
+			System.out.println("count ------>" + res.getString(1));
+		}
+	}
+
+	private static void selectData(Statement stmt, String tableName)
+			throws SQLException {
+		sql = "select * from " + tableName;
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+		System.out.println(" select * query :");
+		while (res.next()) {
+			System.out.println(res.getString(1) + "\t" + res.getString(2)+ "\t"+res.getString(3));
+		}
+	}
+	
+	private static void selectMACData(Statement stmt, String tableName,String name)
+			throws SQLException {
+		sql = "select * from " + tableName + " where where clientmac = '"+name+"'" ;
+		//clientmacname
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+		System.out.println(" select * query :");
+		while (res.next()) {
+			System.out.println(res.getString(1) + "\t" + res.getString(2)+ "\t"+res.getString(3));
+		}
+	}
+	
+	private static void selectTimeData(Statement stmt, String tableName,String Time)
+			throws SQLException {
+		sql = "select * from " + tableName + " where time = '"+Time+"'" ;
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+		System.out.println(" select * query :");
+		while (res.next()) {
+			System.out.println(res.getString(1) + "\t" + res.getString(2)+ "\t"+res.getString(3));
+		}
+	}
+	
+
+	private static void loadData(Statement stmt, String tableName)
+			throws SQLException {
+		String filepath = "/home/hadoop01/data";
+		sql = "load data local inpath '" + filepath + "' into table "
+				+ tableName;
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+	}
+
+	private static void describeTables(Statement stmt, String tableName)
+			throws SQLException {
+		sql = "describe " + tableName;
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+		System.out.println("describe table :");
+		while (res.next()) {
+			System.out.println(res.getString(1) + "\t" + res.getString(2));
+		}
+	}
+
+	private static void showTables(Statement stmt, String tableName)
+			throws SQLException {
+		sql = "show tables '" + tableName + "'";
+		System.out.println("Running:" + sql);
+		res = stmt.executeQuery(sql);
+		System.out.println("show tables :");
+		if (res.next()) {
+			System.out.println(res.getString(1));
+		}
+	}
+
+	private static void createTable(Statement stmt, String tableName)
+			throws SQLException {
+		sql = "create table "
+				+ tableName
+				+ " (key int, value string)  row format delimited fields terminated by '\t'";
+		stmt.executeQuery(sql);
+	}
+
+	private static String dropTable(Statement stmt) throws SQLException {
+		
+		String tableName = "testHive";
+		sql = "drop table " + tableName;
+		stmt.executeQuery(sql);
+		return tableName;
+	}
+
+	private static Connection getConn() throws ClassNotFoundException,
+			SQLException {
+		Class.forName(driverName);
+		Connection conn = DriverManager.getConnection(url, user, password);
+		return conn;
+	}
+
+}

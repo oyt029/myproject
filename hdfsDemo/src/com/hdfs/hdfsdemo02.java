@@ -37,7 +37,7 @@ public class hdfsdemo02 {
 	public static void main(String[] args) throws IOException {
 		JobConf conf = getConfig();
 		hdfsdemo02 hdfs = new hdfsdemo02(conf);
-		hdfs.ls("hdfs://192.168.1.159:50070:/");
+		hdfs.ls("hdfs://192.168.1.159:8020");
 	}
 
 	// 加载Hadoop配置文件

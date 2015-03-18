@@ -1,0 +1,184 @@
+package show;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.util.Bytes;
+
+/**
+ * 
+ * 针对 Hive & Hbase 的工具类
+ */
+public class HiveUtil {
+	// Hbase Configuration
+	private static Configuration conf = null;
+
+	/**
+	 * Hbase初始化配置
+	 */
+	static {
+		Configuration HBASE_CONFIG = new Configuration();
+		// 与hbase/conf/hbase-site.xml中hbase.zookeeper.quorum配置的值相同
+		HBASE_CONFIG.set("hbase.zookeeper.quorum", "slave1,slave2,slave3");
+		// 与hbase/conf/hbase-site.xml中hbase.zookeeper.property.clientPort配置的值相同
+		HBASE_CONFIG.set("hbase.zookeeper.property.clientPort", "2181");
+		conf = HBaseConfiguration.create(HBASE_CONFIG);
+	}
+	
+	/**
+	 * Hbase创建一张表
+	 */
+	public static void creatTable(String tableName, String[] familys)
+			throws Exception {
+		HBaseAdmin admin = new HBaseAdmin(conf);
+		if (admin.tableExists(tableName)) {
+			System.out.println("table already exists!");
+		} else {
+			HTableDescriptor tableDesc = new HTableDescriptor(tableName);
+			for (int i = 0; i < familys.length; i++) {
+				tableDesc.addFamily(new HColumnDescriptor(familys[i]));
+			}
+			admin.createTable(tableDesc);
+			System.out.println("create table " + tableName + " ok.");
+		}
+	}
+
+	/**
+	 * 把数据存储到 Hbase 中
+	 */
+	public static void addRecord(String tableName, String rowKey,
+			String family, String qualifier, String value) throws Exception {
+		try {
+			HTable table = new HTable(conf, tableName);
+			Put put = new Put(Bytes.toBytes(rowKey));
+			put.add(Bytes.toBytes(family), Bytes.toBytes(qualifier),
+					Bytes.toBytes(value));
+			table.put(put);
+			System.out.println("insert recored " + rowKey + " to table "
+					+ tableName + " ok.");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Hbase显示所有数据
+	 */
+	public static String getAllRecord(String tableName) {
+		StringBuffer sb = new StringBuffer();
+		try {
+			HTable table = new HTable(conf, tableName);
+			Scan s = new Scan();
+			ResultScanner ss = table.getScanner(s);
+			for (Result r : ss) {
+				for (KeyValue kv : r.raw()) {
+					sb.append("<tr>");
+					sb.append("<td>"+kv.getRow()+"</td>");
+					sb.append("<td>"+kv.getFamily()+"</td>");
+					sb.append("<td>"+kv.getQualifier()+"</td>");
+					sb.append("<td>"+kv.getValue()+"</td>");
+					sb.append("</tr>");
+					System.out.print(new String(kv.getRow()) + " ");
+					System.out.print(new String(kv.getFamily()) + ":");
+					System.out.print(new String(kv.getQualifier()) + " ");
+					System.out.print(kv.getTimestamp() + " ");
+					System.out.println(new String(kv.getValue()));
+					
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return sb.toString();
+	}
+
+	// Hive创建表
+	public static void createTable(String sql) throws SQLException {
+		Connection conn = DBHelper.getHiveConn();
+		Statement stmt = conn.createStatement();
+		stmt.executeQuery(sql);
+	}
+
+	// Hive依据条件查询数据
+	public static ResultSet queryData(String sql) throws SQLException {
+		Connection conn = DBHelper.getHiveConn();
+		Statement stmt = conn.createStatement();
+		ResultSet res = stmt.executeQuery(sql);
+		return res;
+	}
+
+	// Hive加载数据
+	public static void loadData(String sql) throws SQLException {
+		Connection conn = DBHelper.getHiveConn();
+		Statement stmt = conn.createStatement();
+		stmt.executeQuery(sql);
+	}
+
+	// Hive创建表
+	public static void setData(String sql) throws SQLException {
+		Connection conn = DBHelper.getHiveConn();
+		Statement stmt = conn.createStatement();
+		stmt.executeQuery(sql);
+	}
+	
+	
+	// 把数据存储到 MySQL 中
+	public static void hiveToMySQL(List<String[]> list) throws SQLException {
+		Connection conn = DBHelper.getMySQLConn();
+		Statement stmt = conn.createStatement();
+		for (String[] arr : list) {
+			String rdate = arr[0];
+			String time = arr[1];
+			String type = arr[2];
+			String relateclass = arr[3];
+			String information = arr[4];
+			StringBuffer sql = new StringBuffer();
+			sql.append("insert into hadooplog values(0,'");
+			sql.append(rdate + "','");
+			sql.append(time + "','");
+			sql.append(type + "','");
+			sql.append(relateclass + "','");
+			sql.append(information + "')");
+
+			stmt.executeUpdate(sql.toString());
+		}
+	}
+
+	// 把数据存储到 Hbase 中
+	public static void hiveToHbase(List<String[]> list, String tableName)
+			throws Exception {
+		int i = 0;
+		for (String[] arr : list) {
+			String rdate = arr[0];
+			String time = arr[1];
+			String type = arr[2];
+			String relateclass = arr[3];
+			String information = arr[4];
+			HiveUtil.addRecord(tableName, "id_" + i, "time", "date", rdate);
+			HiveUtil.addRecord(tableName, "id_" + i, "time", "time", time);
+			HiveUtil.addRecord(tableName, "id_" + i, "info", "type", type);
+			HiveUtil.addRecord(tableName, "id_" + i, "info", "relateclass",
+					relateclass);
+			HiveUtil.addRecord(tableName, "id_" + i, "info", "information",
+					information);
+			i++;
+		}
+	}
+	// 从hbase中取得数据，显示
+	
+}

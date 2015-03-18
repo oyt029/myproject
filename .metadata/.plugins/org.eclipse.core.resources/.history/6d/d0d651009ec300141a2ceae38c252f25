@@ -1,0 +1,16 @@
+package hive;
+import hive.hiveDAO;
+
+public class hivetest extends hiveDAO{
+	public static void main(String[] args) {
+		
+	
+	
+	hiveDAO hive = new hiveDAO();
+	
+	hive.countData(stmt, tableName);
+	}
+
+	
+	
+}

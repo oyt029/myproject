@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<qualifiedTypeNameHistroy>
+<fullyQualifiedTypeName name="org.apache.hadoop.examples.WordCount"/>
+<fullyQualifiedTypeName name="java.io.FileNotFoundException"/>
+<fullyQualifiedTypeName name="java.io.BufferedReader"/>
+<fullyQualifiedTypeName name="java.io.FileReader"/>
+<fullyQualifiedTypeName name="java.io.BufferedWriter"/>
+<fullyQualifiedTypeName name="java.io.FileWriter"/>
+<fullyQualifiedTypeName name="java.io.File"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.model.DataModel"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.impl.model.file.FileDataModel"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.impl.recommender.CachingRecommender"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.impl.common.LongPrimitiveIterator"/>
+<fullyQualifiedTypeName name="com.sun.tools.javac.util.List"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.recommender.RecommendedItem"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.impl.recommender.slopeone.SlopeOneRecommender"/>
+<fullyQualifiedTypeName name="org.apache.commons.configuration.Configuration"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.yarn.conf.YarnConfiguration"/>
+<fullyQualifiedTypeName name="java.lang.System"/>
+<fullyQualifiedTypeName name="fz.hadoop2.util.Hadoop2Util"/>
+<fullyQualifiedTypeName name="mahout03.HdfsDAO"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.fs.BlockLocation"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.fs.FileSystem"/>
+<fullyQualifiedTypeName name="java.nio.file.Path"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.fs.Path"/>
+<fullyQualifiedTypeName name="java.io.IOException"/>
+<fullyQualifiedTypeName name="org.apache.commons.httpclient.URI"/>
+<fullyQualifiedTypeName name="java.net.URI"/>
+<fullyQualifiedTypeName name="java.sql.Connection"/>
+<fullyQualifiedTypeName name="java.sql.DriverManager"/>
+<fullyQualifiedTypeName name="java.sql.ResultSet"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.conf.Configuration"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.hadoop.item.RecommenderJob"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.util.ToolRunner"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.hadoop.als.RecommenderJob"/>
+<fullyQualifiedTypeName name="org.apache.mahout.cf.taste.hadoop.pseudo.RecommenderJob"/>
+<fullyQualifiedTypeName name="org.apache.commons.compress.utils.IOUtils"/>
+<fullyQualifiedTypeName name="org.apache.lucene.util.IOUtils"/>
+<fullyQualifiedTypeName name="org.apache.commons.io.IOUtils"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.io.IOUtils"/>
+<fullyQualifiedTypeName name="org.apache.hadoop.fs.FSDataInputStream"/>
+</qualifiedTypeNameHistroy>

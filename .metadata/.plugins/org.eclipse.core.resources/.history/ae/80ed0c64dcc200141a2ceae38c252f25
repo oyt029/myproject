@@ -1,0 +1,99 @@
+package com.hdfs;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.net.ftp.FTPClient;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.FileOutputStream;
+
+/**
+ * JAVA FTP上传下载 助手类
+ * 
+ * commons-net-1.4.1.jar PFTClinet jar包
+ * 
+ * @author : JenMinZhang
+ */
+public class ftpClient {
+
+	/**
+	 * FTP上传单个文件测试
+	 * @param pathout 
+	 * @param pathdown 
+	 */
+	public static void fileUploadByFtp(String pathup, String pathdown) {
+		FTPClient ftpClient = new FTPClient();
+		FileInputStream fis = null;
+
+		try {
+			ftpClient.connect("222.73.156.30");
+			ftpClient.login("ftpuser", "feixun*123");
+
+			File srcFile = new File(pathup);
+			fis = new FileInputStream(srcFile);
+			// 设置上传目录
+			ftpClient.changeWorkingDirectory(pathdown);
+			ftpClient.setBufferSize(1024);
+			ftpClient.setControlEncoding("GBK");
+			// 设置文件类型（二进制）
+			ftpClient.setFileType(FTPClient.BINARY_FILE_TYPE);
+			ftpClient.storeFile("201502191400.tar.gz.ef", fis);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException("FTP客户端出错！", e);
+		} finally {
+			IOUtils.closeQuietly(fis);
+			try {
+				ftpClient.disconnect();
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new RuntimeException("关闭FTP连接发生异常！", e);
+			}
+		}
+	}
+
+	/**
+	 * FTP下载单个文件测试
+	 */
+	public static void fileDownloadByFtp() {
+		FTPClient ftpClient = new FTPClient();
+		FileOutputStream fos = null;
+
+		try {
+			ftpClient.connect("222.73.156.30");
+			ftpClient.login("ftpuser", "feixun*123");
+
+			String remoteFileName = "/hadoop-2.6.0.2.2.0.0-2041-src.tar.gz";
+			// fos = new FileOutputStream("E:/test/test_back_081901.sql");
+			fos = new FileOutputStream("/flume/hadoop-2.6.0.2.2.0.0-2041-src.tar.gz");
+			ftpClient.setBufferSize(1024);
+			// 设置文件类型（二进制）
+			ftpClient.setFileType(FTPClient.BINARY_FILE_TYPE);
+			ftpClient.retrieveFile(remoteFileName, fos);
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException("FTP客户端出错！", e);
+		} finally {
+			IOUtils.closeQuietly(fos);
+			try {
+				ftpClient.disconnect();
+			} catch (IOException e) {
+				e.printStackTrace();
+				throw new RuntimeException("关闭FTP连接发生异常！", e);
+			}
+		}
+	}
+
+	public static void main(String[] args) {
+		
+		String pathdown = "/201502191400.tar.gz.ef";
+		String pathup  = "ftp://192.168.1.177/usr/hdp/test/201502191400.tar.gz.ef";
+		fileUploadByFtp(pathup,pathdown);
+		//fileDownloadByFtp();s
+	
+//		jiami jiami01 = new jiami();
+//		jiami01.jiemi(pathin, pathout);
+//		jiami01.jieya(pathin, pathout);
+	}
+}
